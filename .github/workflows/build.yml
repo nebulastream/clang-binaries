@@ -8,14 +8,23 @@ on:
 jobs:
   build-x64-linux:
     timeout-minutes: 360
-    env:
-      VCPKG_DEP_LIST: x64-linux
-      VCPKG_FEATURE_FLAGS: -binarycaching
-    runs-on: [self-hosted, linux, X64, dep-builder]
+    name: ${{ matrix.osversion }} ${{ matrix.arch }}
+    runs-on: [self-hosted, linux, '${{ matrix.arch }}', dep-builder]
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        osversion: [ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
+        include:
+          - osversion: ubuntu-18_04
+            arch: "X64"
+          - osversion: ubuntu-20_04
+            arch: "X64"
+          - osversion: ubuntu-22_04
+            arch: "X64"
+          - osversion: ubuntu-22_04
+            arch: "arm64"
+    env:
+      VCPKG_DEP_LIST: ${{arch}}-linux
+      VCPKG_FEATURE_FLAGS: -binarycaching
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
@@ -56,57 +65,7 @@ jobs:
         run: |
           test -n "$(docker image ls -q nes_clang_build_${{ matrix.osversion }})" && \
           docker image rm $(docker image ls -q nes_clang_build_${{ matrix.osversion }}) || \
-          true
-  build-arm-linux:
-    timeout-minutes: 360
-    env:
-      VCPKG_DEP_LIST: arm64-linux
-      VCPKG_FEATURE_FLAGS: -binarycaching
-    runs-on: [self-hosted, linux, ARM64, dep-builder]
-    strategy:
-      matrix:
-        osversion: [ubuntu-22.04]
-    steps:
-      - uses: AutoModality/action-clean@v1
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - name: Set output vars to the actual tag name
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-      - name: Build Docker
-        id: builddocker
-        working-directory: ${{ github.workspace }}/docker/
-        run: docker build  -t nes_clang_build_${{ matrix.osversion }} -f Dockerfile-${{ matrix.osversion }} .     
-      - name: Build Clang
-        id: installdeps
-        run: |
-          docker run -v ${{ github.workspace }}:/build_dir --rm nes_clang_build_${{ matrix.osversion }} \
-          ./build_dir/build_ubuntu-arm64.sh
-      - name: Compress artifacts
-        id: compressdeps
-        run: |
-          7z a nes-clang-15-${{ matrix.osversion }}-arm64.7z clang -mx9 -aoa  
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        id: createrelease
-        with:
-          files: |
-            nes-clang-15-${{ matrix.osversion }}-arm64.7z
-      - name: Clean build artifacts
-        id: cleanbuildartifacts
-        if: always()
-        run: |
-          rm -rf clang
-          rm -rf llvm-project 
-          rm -rf .git
-      - name: Remove docker image
-        id: removedockerimage
-        if: always()
-        run: |
-          test -n "$(docker image ls -q nes_clang_build_${{ matrix.osversion }})" && \
-          docker image rm $(docker image ls -q nes_clang_build_${{ matrix.osversion }}) || \
-          true
+          true  
   build-arm-osx:
     timeout-minutes: 360
     env:
