@@ -11,20 +11,20 @@ jobs:
     name: ${{ matrix.osversion }} ${{ matrix.arch }}
     runs-on: [self-hosted, linux, '${{ matrix.arch }}', dep-builder]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
-          - osversion: ubuntu-18_04
+          - osversion: ubuntu-18.04
             arch: "X64"
-          - osversion: ubuntu-20_04
+          - osversion: ubuntu-20.04
             arch: "X64"
-          - osversion: ubuntu-22_04
+          - osversion: ubuntu-22.04
             arch: "X64"
-          - osversion: ubuntu-18_04
+          - osversion: ubuntu-18.04
             arch: "arm64"
-          - osversion: ubuntu-20_04
+          - osversion: ubuntu-20.04
             arch: "arm64"
-          - osversion: ubuntu-22_04
+          - osversion: ubuntu-22.04
             arch: "arm64"    
     steps:
       - uses: AutoModality/action-clean@v1
