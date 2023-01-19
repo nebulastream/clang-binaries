@@ -26,9 +26,6 @@ jobs:
             arch: "arm64"
           - osversion: ubuntu-22_04
             arch: "arm64"    
-    env:
-      VCPKG_DEP_LIST: ${{arch}}-linux
-      VCPKG_FEATURE_FLAGS: -binarycaching
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
@@ -72,9 +69,6 @@ jobs:
           true  
   build-arm-osx:
     timeout-minutes: 360
-    env:
-      VCPKG_DEP_LIST: arm64-osx
-      VCPKG_FEATURE_FLAGS: -binarycaching
     runs-on: [ self-hosted, macos, ARM64]
     steps:
       - uses: lukka/get-cmake@latest
@@ -106,9 +100,6 @@ jobs:
           rm -rf clang
   build-x64-osx:
     timeout-minutes: 360
-    env:
-      VCPKG_DEP_LIST: x64-osx
-      VCPKG_FEATURE_FLAGS: -binarycaching
     runs-on: [ self-hosted, macos, X64, dep-builder ]
     steps:
       - uses: lukka/get-cmake@latest
