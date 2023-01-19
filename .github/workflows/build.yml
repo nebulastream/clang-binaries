@@ -20,8 +20,12 @@ jobs:
             arch: "X64"
           - osversion: ubuntu-22_04
             arch: "X64"
-          - osversion: ubuntu-22_04
+          - osversion: ubuntu-18_04
             arch: "arm64"
+          - osversion: ubuntu-20_04
+            arch: "arm64"
+          - osversion: ubuntu-22_04
+            arch: "arm64"    
     env:
       VCPKG_DEP_LIST: ${{arch}}-linux
       VCPKG_FEATURE_FLAGS: -binarycaching
