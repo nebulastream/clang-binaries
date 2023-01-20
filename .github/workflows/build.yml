@@ -42,17 +42,17 @@ jobs:
         id: installdeps
         run: |
           docker run -v ${{ github.workspace }}:/build_dir --rm nes_clang_build_${{ matrix.osversion }} \
-          ./build_dir/build_ubuntu-x64.sh
+          ./build_dir/build_ubuntu-${{ matrix.arch }}.sh
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-15-${{ matrix.osversion }}-X64.7z clang -mx9 -aoa  
+          7z a nes-clang-15-${{ matrix.osversion }}-${{ matrix.arch }}.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-15-${{ matrix.osversion }}-X64.7z
+            nes-clang-15-${{ matrix.osversion }}-${{ matrix.arch }}.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
