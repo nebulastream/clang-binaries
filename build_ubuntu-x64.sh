@@ -33,7 +33,8 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
                 -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
 				-DLLVM_BUILTIN_TARGETS="x86_64-unknown-linux-gnu" \
 				-DLLVM_RUNTIME_TARGETS="x86_64-unknown-linux-gnu" \
-				-DLIBCXX_USE_COMPILER_RT=YES and/or -DLIBCXXABI_USE_COMPILER_RT=YES
+				-DLIBCXX_USE_COMPILER_RT=YES \
+				-DLIBCXXABI_USE_COMPILER_RT=YES
 ninja -C build 
 ninja -C build clang-format
 ninja -C build llvm-cov
