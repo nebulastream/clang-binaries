@@ -30,14 +30,13 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_BUILD_TOOLS=ON \
 				-DLLVM_ENABLE_TERMINFO=OFF \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
-                -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
 				-DCOMPILER_RT_ENABLE_IOS=OFF \
 				-DCOMPILER_RT_ENABLE_WATCHOS=OFF \
 				-DCOMPILER_RT_ENABLE_TVOS=OFF
 ninja -C build 
 ninja -C build clang-format
 ninja -C build llvm-cov
-ninja -C build runtimes
+#ninja -C build runtimes
 ninja -C build install
 ninja -C build install llvm-cov
 #ninja -C build mlir-libraries mlir-cmake-exports mlir-headers
