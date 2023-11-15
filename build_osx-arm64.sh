@@ -32,7 +32,9 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
 				-DCOMPILER_RT_ENABLE_IOS=OFF \
 				-DCOMPILER_RT_ENABLE_WATCHOS=OFF \
-				-DCOMPILER_RT_ENABLE_TVOS=OFF
+				-DCOMPILER_RT_ENABLE_TVOS=OFF \
+        -DLLVM_ENABLE_RTTI=ON 
+
 ninja -C build 
 ninja -C build clang-format
 ninja -C build llvm-cov
