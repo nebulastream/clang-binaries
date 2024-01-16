@@ -27,6 +27,7 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_OPTIMIZED_TABLEGEN=ON \
 				-DCMAKE_INSTALL_PREFIX="/build_dir/clang" \
 				-DLLVM_TARGETS_TO_BUILD="AArch64" \
+                                -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="NVPTX" \
 				-DLLVM_BUILD_TOOLS=ON \
 				-DLLVM_ENABLE_TERMINFO=OFF \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
