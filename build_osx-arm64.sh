@@ -35,6 +35,7 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DCOMPILER_RT_ENABLE_TVOS=OFF
 ninja -C build 
 ninja -C build clang-format
+ninja -C build clang-tidy
 ninja -C build llvm-cov
 #ninja -C build runtimes
 ninja -C build install
