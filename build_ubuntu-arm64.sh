@@ -17,7 +17,7 @@ cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
-			    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir"   \
+			    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra"   \
 				-DBOOTSTRAP_LLVM_ENABLE_LTO=ON \
 				-DLLVM_INCLUDE_EXAMPLES=OFF    \
 				-DLLVM_INCLUDE_TESTS=OFF \
@@ -33,6 +33,7 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
                 -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" 
 ninja -j4 -C build 
 ninja -j4 -C build clang-format
+ninja -j4 -C build clang-tidy
 ninja -j4 -C build llvm-cov
 ninja -j4 -C build runtimes
 ninja -j4 -C build install
