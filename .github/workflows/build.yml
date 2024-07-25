@@ -36,13 +36,13 @@ jobs:
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-16-${{ matrix.osversion }}-X64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-${{ matrix.osversion }}-X64.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-16-${{ matrix.osversion }}-X64.7z
+            nes-clang-18-${{ matrix.osversion }}-X64.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
@@ -85,13 +85,13 @@ jobs:
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-16-${{ matrix.osversion }}-arm64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-${{ matrix.osversion }}-arm64.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-16-${{ matrix.osversion }}-arm64.7z
+            nes-clang-18-${{ matrix.osversion }}-arm64.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
@@ -128,13 +128,13 @@ jobs:
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-16-osx-arm64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-osx-arm64.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-16-osx-arm64.7z
+            nes-clang-18-osx-arm64.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
@@ -162,13 +162,13 @@ jobs:
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-16-osx-x64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-osx-x64.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-16-osx-x64.7z
+            nes-clang-18-osx-x64.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
