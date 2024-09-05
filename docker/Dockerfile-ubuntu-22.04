@@ -1,4 +1,5 @@
 FROM ubuntu:22.04
+ARG LLVM_VERSION=18
 RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
   apt-transport-https \
   git \
@@ -15,11 +16,26 @@ RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
   ninja-build \
   && apt-get clean -qq
 
-RUN wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-RUN add-apt-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16  main'
-RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
-  clang-16 && apt-get clean -qq
+RUN curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /etc/apt/keyrings/llvm-snapshot.gpg \
+    && chmod a+r /etc/apt/keyrings/llvm-snapshot.gpg \
+    && echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/"$(. /etc/os-release && echo "$VERSION_CODENAME")"/ llvm-toolchain-"$(. /etc/os-release && echo "$VERSION_CODENAME")"-${LLVM_VERSION} main" > /etc/apt/sources.list.d/llvm-snapshot.list \
+    && echo "deb-src [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/"$(. /etc/os-release && echo "$VERSION_CODENAME")"/ llvm-toolchain-"$(. /etc/os-release && echo "$VERSION_CODENAME")"-${LLVM_VERSION} main" >> /etc/apt/sources.list.d/llvm-snapshot.list \
+    && apt update -y && apt install clang-${LLVM_VERSION} libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev libclang-rt-${LLVM_VERSION}-dev -y
+
+# set default compiler to clang and make libc++ available via ldconfig
+RUN ln -sf /usr/bin/clang-${LLVM_VERSION} /usr/bin/cc \
+    && ln -sf /usr/bin/clang++-${LLVM_VERSION} /usr/bin/c++ \
+    && update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${LLVM_VERSION} 30\
+    && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-${LLVM_VERSION} 30\
+    && update-alternatives --auto cc \
+    && update-alternatives --auto c++ \
+    && update-alternatives --display cc \
+    && update-alternatives --display c++ \
+    && echo /usr/lib/llvm-${LLVM_VERSION}/lib > /etc/ld.so.conf.d/libcxx.conf \
+    && ldconfig \
+    && ls -l /usr/bin/cc /usr/bin/c++ \
+    && cc --version \
+    && c++ --version
 
 ADD ./entrypoint-build.sh /entrypoint.sh
-
 ENTRYPOINT ["/entrypoint.sh"]
