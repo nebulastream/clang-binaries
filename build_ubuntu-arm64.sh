@@ -16,6 +16,18 @@
 cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
+
+if [ "$STDLIB" == "libc++" ]; then
+    CXX_FLAGS="-stdlib=libc++ -std=c++20"
+    LINKER_FLAGS="-lc++"
+elif [ "$STDLIB" == "stdlibc++" ]; then
+    CXX_FLAGS="-std=c++20"
+    LINKER_FLAGS=""
+else
+    echo "Error: STDLIB env not set to either libc++ or stdlibc++."
+    exit 1
+fi
+
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 			    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra"   \
 				-DBOOTSTRAP_LLVM_ENABLE_LTO=ON \
@@ -30,7 +42,9 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_BUILD_TOOLS=ON \
 				-DLLVM_ENABLE_TERMINFO=OFF \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
-                -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" 
+				-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+				-DCMAKE_EXE_LINKER_FLAGS="${LINKER_FLAGS}" \
+				-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" 
 ninja -j16 -C build
 ninja -j16 -C build clang-format
 ninja -j16 -C build clang-tidy
