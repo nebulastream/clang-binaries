@@ -29,7 +29,7 @@ else
 fi
 
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
-    			        -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra"   \
+    			        -DLLVM_ENABLE_PROJECTS="mlir"   \
 				-DBOOTSTRAP_LLVM_ENABLE_LTO=ON \
 				-DLLVM_INCLUDE_EXAMPLES=OFF    \
 				-DLLVM_INCLUDE_TESTS=OFF \
@@ -43,27 +43,9 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_ENABLE_TERMINFO=OFF \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
 				-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-				-DCMAKE_EXE_LINKER_FLAGS="${LINKER_FLAGS}" \
-				-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" 
-ninja -C build 
-ninja -C build clang-format
-ninja -C build clang-tidy
-ninja -C build llvm-cov
-ninja -C build runtimes
-ninja -C build install
-ninja -C build install llvm-cov
-#ninja -C build mlir-libraries mlir-cmake-exports mlir-headers
+				-DCMAKE_EXE_LINKER_FLAGS="${LINKER_FLAGS}" 
 
-# remove stuff from build
-rm -rf /build/utils
-rm -rf /build/unittests
-rm -rf /build/tools
-rm -rf /build/third-party
-rm -rf /build/test
-rm -rf /build/runtimes
-rm -rf /build/projects
-rm -rf /build/CMakeFiles
-rm -rf /build/benchmarks
-#ninja -C build check-runtimes
+cmake --build build --target install -j$(nproc)
+
 
 
