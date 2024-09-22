@@ -21,9 +21,9 @@ RUN cd Python-2.7.18 && ./configure --enable-optimizations && make altinstall
 RUN ln -s "/usr/local/bin/python2.7" "/usr/bin/python2"
 
 RUN wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-RUN add-apt-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16  main'
+RUN add-apt-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18  main'
 RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
-  clang-16 && apt-get clean -qq
+  clang-18 && apt-get clean -qq
 
 ADD ./entrypoint-build.sh /entrypoint.sh
 
