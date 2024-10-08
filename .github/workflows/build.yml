@@ -17,6 +17,7 @@ jobs:
       matrix:
         osversion: [ubuntu-22.04]
         stdlib: [libc++, stdlibc++]
+        sanitizer: [null, 'Address', 'Thread', 'Undefined']
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
@@ -33,18 +34,18 @@ jobs:
         id: installdeps
         run: |
           echo "${{ matrix.stdlib }}"
-          docker run -v ${{ github.workspace }}:/build_dir -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
+          docker run -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer || '' }} -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
           ./build_dir/build_ubuntu-x64.sh
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64-${{ matrix.sanitizer || 'None' }}.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64.7z
+            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64-${{ matrix.sanitizer || 'None' }}.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
@@ -68,6 +69,7 @@ jobs:
       matrix:
         osversion: [ubuntu-22.04]
         stdlib: [libc++, stdlibc++]
+        sanitizer: [null, 'Address', 'Thread', 'Undefined']
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
@@ -83,18 +85,18 @@ jobs:
       - name: Build Clang
         id: installdeps
         run: |
-          docker run -v ${{ github.workspace }}:/build_dir -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
+          docker run -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer || '' }} -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
           ./build_dir/build_ubuntu-arm64.sh
       - name: Compress artifacts
         id: compressdeps
         run: |
-          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64.7z clang -mx9 -aoa  
+          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64-${{ matrix.sanitizer || 'None' }}.7z clang -mx9 -aoa  
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64.7z
+            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64-${{ matrix.sanitizer || 'None' }}.7z
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()

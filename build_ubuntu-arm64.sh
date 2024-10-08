@@ -12,11 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+set -o xtrace
 cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
 
+local CXX_FLAGS=""
+local LINKER_FLAGS=""
+local ADDITIONAL_FLAGS=""
 if [ "$STDLIB" == "libc++" ]; then
     CXX_FLAGS="-stdlib=libc++ -std=c++20"
     LINKER_FLAGS="-lc++"
@@ -26,6 +29,18 @@ elif [ "$STDLIB" == "stdlibc++" ]; then
 else
     echo "Error: STDLIB env not set to either libc++ or stdlibc++."
     exit 1
+fi
+
+if [ ! -z ${ENABLE_SANITIZER+x} ]; then
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=${ENABLE_SANITIZER}"
+fi
+
+if [ ! -z "${CXX_FLAGS}" ]; then
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DCMAKE_CXX_FLAGS=\"${CXX_FLAGS}\""
+fi
+
+if [ ! -z "${LINKER_FLAGS}" ]; then
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DCMAKE_EXE_LINKER_FLAGS=\"${LINKER_FLAGS}\""
 fi
 
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
@@ -42,8 +57,7 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
 				-DLLVM_BUILD_TOOLS=ON \
 				-DLLVM_ENABLE_TERMINFO=OFF \
 				-DLLVM_ENABLE_Z3_SOLVER=OFF \
-				-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-				-DCMAKE_EXE_LINKER_FLAGS="${LINKER_FLAGS}" 
+				${ADDITIONAL_FLAGS}
 
 cmake --build build --target install -j$(nproc)
 
