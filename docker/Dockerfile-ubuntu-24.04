@@ -1,0 +1,30 @@
+FROM ubuntu:24.04
+RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
+  apt-transport-https \
+  apt-utils \
+  git \
+  wget \
+  python3 \
+  tar \
+  p7zip-full \
+  cmake \
+  software-properties-common \
+  build-essential \
+  curl zip unzip tar \  
+  pkg-config \
+  ninja-build \
+  && apt-get clean -qq
+
+RUN wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
+RUN tar xzf Python-2.7.18.tgz
+RUN cd Python-2.7.18 && ./configure --enable-optimizations && make altinstall
+RUN ln -s "/usr/local/bin/python2.7" "/usr/bin/python2"
+
+RUN wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+RUN add-apt-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18  main'
+RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -qq \
+  clang-18 && apt-get clean -qq
+
+ADD ./entrypoint-build.sh /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
