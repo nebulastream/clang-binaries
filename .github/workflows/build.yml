@@ -5,110 +5,79 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-x64-linux:
+  build-linux:
     timeout-minutes: 360
-    env:
-      VCPKG_DEP_LIST: x64-linux
-      VCPKG_FEATURE_FLAGS: -binarycaching
-    runs-on: [self-hosted, linux, X64, dep-builder]
+    container:
+      image: nebulastream/nes-development-base:latest
+      volumes:
+        - ccache:/ccache
+      env:
+        CCACHE_DIR: /ccache
+        MOLD_JOBS: 1 
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
-        osversion: [ubuntu-22.04]
-        stdlib: [libc++, stdlibc++]
+        arch: [x64, arm64]
+        stdlib: [libcxx, libstdcxx]
         sanitizer: [null, 'Address', 'Thread', 'Undefined']
+        exclude:
+          - arch: arm64
+            stdlib: libstdcxx
+    runs-on: [self-hosted, linux, "${{ matrix.arch }}", dep-builder]
     steps:
       - uses: AutoModality/action-clean@v1
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-      - name: Set output vars to the actual tag name
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-      - name: Build Docker
-        id: builddocker
-        working-directory: ${{ github.workspace }}/docker/
-        run: docker build  -t nes_clang_build_${{ matrix.osversion }} -f Dockerfile-${{ matrix.osversion }} .     
       - name: Build Clang
+        shell: bash
         id: installdeps
         run: |
-          echo "${{ matrix.stdlib }}"
-          docker run -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer || '' }} -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
-          ./build_dir/build_ubuntu-x64.sh
-      - name: Compress artifacts
-        id: compressdeps
-        run: |
-          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64-${{ matrix.sanitizer || 'None' }}.7z clang -mx9 -aoa  
+          if [[ "${{ matrix.stdlib }}" == "libcxx" ]]; then
+              CXX_FLAGS="-stdlib=libc++ -std=c++20"
+              LINKER_FLAGS="-lc++"
+          elif [[ "${{ matrix.stdlib }}" == "libstdcxx" ]]; then
+              CXX_FLAGS="-std=c++20"
+              LINKER_FLAGS=""
+          fi
+
+          if [[ ! -z "${{ matrix.sanitizer || '' }}" ]]; then
+              ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=${ENABLE_SANITIZER}"
+          fi
+
+          export CXXFLAGS=${CXX_FLAGS}
+          export LDFLAGS="${LINKER_FLAGS} -fuse-ld=mold"
+
+          cmake -G Ninja -S llvm-project/llvm -B build -DCMAKE_BUILD_TYPE=Release \
+                  -DLLVM_ENABLE_PROJECTS="mlir"   \
+                  -DBOOTSTRAP_LLVM_ENABLE_LTO=ON \
+                  -DLLVM_INCLUDE_EXAMPLES=OFF    \
+                  -DLLVM_INCLUDE_TESTS=OFF \
+                  -DLLVM_INCLUDE_BENCHMARKS=OFF \
+                  -DLLVM_BUILD_EXAMPLES=OFF \
+                  -DLLVM_CCACHE_BUILD=ON \
+                  -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
+                  -DLLVM_OPTIMIZED_TABLEGEN=ON \
+                  -DCMAKE_INSTALL_PREFIX="/build_dir/clang" \
+                  -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+                  -DLLVM_BUILD_TOOLS=ON \
+                  -DLLVM_ENABLE_TERMINFO=OFF \
+                  -DLLVM_ENABLE_Z3_SOLVER=OFF \
+                  ${ADDITIONAL_FLAGS}
+
+          cmake --build build --target install -j$(nproc)
+          cd /build_dir/
+          tar -czvf nes-clang-18-${{ matrix.stdlib }}-${{ matrix.arch }}-${{ matrix.sanitizer || 'None' }}.tar.gz clang
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-X64-${{ matrix.sanitizer || 'None' }}.7z
-      - name: Clean build artifacts
-        id: cleanbuildartifacts
-        if: always()
-        run: |
-          rm -rf llvm-project 
-          rm -rf .git
-          rm -rf clang
-      - name: Remove docker image
-        id: removedockerimage
-        if: always()
-        run: |
-          test -n "$(docker image ls -q nes_clang_build_${{ matrix.osversion }})" && \
-          docker image rm $(docker image ls -q nes_clang_build_${{ matrix.osversion }}) || \
-          true
-  build-arm-linux:
-    env:
-      VCPKG_DEP_LIST: arm64-linux
-      VCPKG_FEATURE_FLAGS: -binarycaching
-    runs-on: [self-hosted, linux, ARM64, dep-builder]
-    strategy:
-      matrix:
-        osversion: [ubuntu-22.04]
-        stdlib: [libc++, stdlibc++]
-        sanitizer: [null, 'Address', 'Thread', 'Undefined']
-    steps:
-      - uses: AutoModality/action-clean@v1
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - name: Set output vars to the actual tag name
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-      - name: Build Docker
-        id: builddocker
-        working-directory: ${{ github.workspace }}/docker/
-        run: docker build  -t nes_clang_build_${{ matrix.osversion }} -f Dockerfile-${{ matrix.osversion }} .     
-      - name: Build Clang
-        id: installdeps
-        run: |
-          docker run -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer || '' }} -e STDLIB=${{ matrix.stdlib }} --rm nes_clang_build_${{ matrix.osversion }} \
-          ./build_dir/build_ubuntu-arm64.sh
-      - name: Compress artifacts
-        id: compressdeps
-        run: |
-          7z a nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64-${{ matrix.sanitizer || 'None' }}.7z clang -mx9 -aoa  
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        id: createrelease
-        with:
-          files: |
-            nes-clang-18-${{ matrix.osversion }}-${{ matrix.stdlib }}-arm64-${{ matrix.sanitizer || 'None' }}.7z
-      - name: Clean build artifacts
-        id: cleanbuildartifacts
-        if: always()
-        run: |
-          rm -rf clang
-          rm -rf llvm-project 
-          rm -rf .git
-      - name: Remove docker image
-        id: removedockerimage
-        if: always()
-        run: |
-          test -n "$(docker image ls -q nes_clang_build_${{ matrix.osversion }})" && \
-          docker image rm $(docker image ls -q nes_clang_build_${{ matrix.osversion }}) || \
-          true
+            /build_dir/nes-clang-18-${{ matrix.stdlib }}-${{ matrix.arch }}-${{ matrix.sanitizer || 'None' }}.tar.gz
 
