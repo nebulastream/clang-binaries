@@ -21,10 +21,10 @@ local CXX_FLAGS=""
 local LINKER_FLAGS=""
 local ADDITIONAL_FLAGS=""
 if [ "$STDLIB" == "libc++" ]; then
-    CXX_FLAGS="-stdlib=libc++ -std=c++20"
+    CXX_FLAGS="-std=c++23 -stdlib=libc++"
     LINKER_FLAGS="-lc++"
 elif [ "$STDLIB" == "stdlibc++" ]; then
-    CXX_FLAGS="-std=c++20"
+    CXX_FLAGS="-std=c++23"
     LINKER_FLAGS=""
 else
     echo "Error: STDLIB env not set to either libc++ or stdlibc++."

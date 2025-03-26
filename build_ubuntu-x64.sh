@@ -18,15 +18,15 @@ cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
 
-local CXX_FLAGS=""
-local LINKER_FLAGS=""
-local ADDITIONAL_FLAGS=""
+CXX_FLAGS=""
+LDFLAGS=""
+ADDITIONAL_FLAGS=""
 if [ "$STDLIB" == "libc++" ]; then
-    CXX_FLAGS="-stdlib=libc++ -std=c++20"
-    LINKER_FLAGS="-lc++"
+    CXXFLAGS="-stdlib=libc++ -std=c++23"
+    LDFLAGS="-lc++"
 elif [ "$STDLIB" == "stdlibc++" ]; then
-    CXX_FLAGS="-std=c++20"
-    LINKER_FLAGS=""
+    CXXFLAGS="-std=c++23"
+    LDFLAGS=""
 else
     echo "Error: STDLIB env not set to either libc++ or stdlibc++."
     exit 1
@@ -36,12 +36,12 @@ if [ ! -z ${ENABLE_SANITIZER+x} ]; then
     ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=${ENABLE_SANITIZER}"
 fi
 
-if [ ! -z "${CXX_FLAGS}" ]; then
-    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DCMAKE_CXX_FLAGS=\"${CXX_FLAGS}\""
+if [ ! -z "${CXXFLAGS}" ]; then
+    export CXXFLAGS
 fi
 
-if [ ! -z "${LINKER_FLAGS}" ]; then
-    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DCMAKE_EXE_LINKER_FLAGS=\"${LINKER_FLAGS}\""
+if [ ! -z "${LDFLAGS}" ]; then
+    export LDFLAGS
 fi
 
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
