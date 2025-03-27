@@ -69,7 +69,7 @@ jobs:
     strategy:
       matrix:
         osversion: [ubuntu-22.04]
-        stdlib: [libc++]
+        stdlib: [libc++, stdlibc++]
         sanitizer: [null, 'Address', 'Thread', 'Undefined']
     steps:
       - uses: AutoModality/action-clean@v1
