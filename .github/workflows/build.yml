@@ -70,7 +70,7 @@ jobs:
       matrix:
         osversion: [ubuntu-22.04]
         stdlib: [libc++]
-        sanitizer: [null]
+        sanitizer: [null, 'Address', 'Thread', 'Undefined']
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
