@@ -17,13 +17,24 @@ cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
 
+capitalize() {
+  if [ -z "$1" ]; then
+    return 1
+  fi
+  
+  local first_char rest
+  first_char=$(echo "${1:0:1}" | tr '[:lower:]' '[:upper:]')
+  rest="${1:1}"
+  echo "${first_char}${rest}"
+}
+
 CXX_FLAGS=""
 LDFLAGS=""
 ADDITIONAL_FLAGS=""
-if [ "$STDLIB" == "libc++" ]; then
+if [ "$STDLIB" == "libcxx" ]; then
     CXXFLAGS="-stdlib=libc++ -std=c++23"
     LDFLAGS="-lc++"
-elif [ "$STDLIB" == "stdlibc++" ]; then
+elif [ "$STDLIB" == "libstdcxx" ]; then
     CXXFLAGS="-std=c++23"
     LDFLAGS=""
 else
@@ -31,8 +42,16 @@ else
     exit 1
 fi
 
-if [ ! -z ${ENABLE_SANITIZER+x} ]; then
-    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=${ENABLE_SANITIZER}"
+if [ ! "${ENABLE_SANITIZER}" = "none" ]; then
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=$(capitalize ${ENABLE_SANITIZER})"
+fi
+
+if [ "${ENABLE_SANITIZER}" = "undefined" ]; then
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_ENABLE_RTTI=ON"
+fi
+
+if [ "${ENABLE_SANITIZER}" = "thread" ]; then
+    export TSAN_OPTIONS="report_bugs=0"
 fi
 
 if [ ! -z "${CXXFLAGS}" ]; then
@@ -45,18 +64,9 @@ fi
 
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
     			        -DLLVM_ENABLE_PROJECTS="mlir"   \
-				-DBOOTSTRAP_LLVM_ENABLE_LTO=ON \
-				-DLLVM_INCLUDE_EXAMPLES=OFF    \
-				-DLLVM_INCLUDE_TESTS=OFF \
-				-DLLVM_INCLUDE_BENCHMARKS=OFF \
-				-DLLVM_BUILD_EXAMPLES=OFF \
-				-DLIBCXX_INCLUDE_BENCHMARKS=OFF \
-				-DLLVM_OPTIMIZED_TABLEGEN=ON \
+				-DLLVM_TARGETS_TO_BUILD=Native \
+				-DLLVM_BUILD_TOOLS=OFF \
 				-DCMAKE_INSTALL_PREFIX="/build_dir/clang" \
-				-DLLVM_TARGETS_TO_BUILD="AArch64" \
-				-DLLVM_BUILD_TOOLS=ON \
-				-DLLVM_ENABLE_TERMINFO=OFF \
-				-DLLVM_ENABLE_Z3_SOLVER=OFF \
 				${ADDITIONAL_FLAGS}
 
 cmake --build build --target install -j$(nproc)
