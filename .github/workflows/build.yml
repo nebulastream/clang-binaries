@@ -13,7 +13,7 @@ jobs:
       matrix:
         arch: ['x64', 'arm64']
         stdlib: ['libcxx', 'libstdcxx']
-        sanitizer: ['none', 'address', 'thread', 'undefined']
+        sanitizer: ['none', 'asan', 'tsan', 'ubsan']
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
@@ -27,12 +27,17 @@ jobs:
         id: compressdeps
         run: |
           ZSTD_CLEVEL=19 ZSTD_NBTHREADS=0 tar --zstd -cf nes-llvm-20-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd clang  
+          if [ "${{matrix.stdlib}}" == "libcxx" ]; then
+            ZSTD_CLEVEL=19 ZSTD_NBTHREADS=0 tar --zstd -cf nes-libcxx-20-${{ matrix.arch }}-${{ matrix.sanitizer }}.tar.zstd libcxx
+          fi
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
+          fail_on_unmatched_files: false
           files: |
             nes-llvm-20-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd
+            nes-libcxx-20-${{ matrix.arch }}-${{ matrix.sanitizer }}.tar.zstd
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()

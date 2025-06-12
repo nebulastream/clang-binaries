@@ -13,27 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 set -o xtrace
-cd /build_dir/llvm-project
-rm -rf ./build
-mkdir build
+set -e
+cd build_dir/llvm-project
 
-capitalize() {
-  if [ -z "$1" ]; then
-    return 1
-  fi
-  
-  local first_char rest
-  first_char=$(echo "${1:0:1}" | tr '[:lower:]' '[:upper:]')
-  rest="${1:1}"
-  echo "${first_char}${rest}"
-}
+apt install -y libclang-19-dev
 
 CXX_FLAGS=""
 LDFLAGS=""
 ADDITIONAL_FLAGS=""
 if [ "$STDLIB" == "libcxx" ]; then
-    CXXFLAGS="-stdlib=libc++ -std=c++23"
-    LDFLAGS="-lc++"
+    if [ "$ENABLE_SANITIZER" = "none" ]; then 
+      cmake -G Ninja -S runtimes -B build-libcxx -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_INSTALL_PREFIX="/build_dir/libcxx"
+	CXXFLAGS="-std=c++23 -nostdinc++ -isystem /build_dir/libcxx/include/c++/v1"
+	LDFLAGS="-L/build_dir/libcxx/lib -lc++ -rpath /build_dir/libcxx/lib"
+    elif [ "$ENABLE_SANITIZER" = "asan" ]; then 
+      cmake -G Ninja -S runtimes -B build-libcxx -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_INSTALL_PREFIX="/build_dir/libcxx" -DLLVM_USE_SANITIZER="Address"
+	CXXFLAGS="-std=c++23 -nostdinc++ -isystem /build_dir/libcxx/include/c++/v1 -fsanitize=address"
+	LDFLAGS="-L/build_dir/libcxx/lib -lc++ -rpath /build_dir/libcxx/lib -fsanitize=address"
+    elif [ "$ENABLE_SANITIZER" = "tsan" ]; then 
+      cmake -G Ninja -S runtimes -B build-libcxx -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_INSTALL_PREFIX="/build_dir/libcxx" -DLLVM_USE_SANITIZER="Thread"
+	CXXFLAGS="-std=c++23 -nostdinc++ -isystem /build_dir/libcxx/include/c++/v1 -fsanitize=thread"
+	LDFLAGS="-L/build_dir/libcxx/lib -lc++ -rpath /build_dir/libcxx/lib -fsanitize=thread"
+    elif [ "$ENABLE_SANITIZER" = "ubsan" ]; then 
+      cmake -G Ninja -S runtimes -B build-libcxx -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_INSTALL_PREFIX="/build_dir/libcxx" -DLLVM_USE_SANITIZER="Undefined"
+	CXXFLAGS="-std=c++23 -nostdinc++ -isystem /build_dir/libcxx/include/c++/v1 -fsanitize=undefined"
+	LDFLAGS="-L/build_dir/libcxx/lib -lc++ -rpath /build_dir/libcxx/lib -fsanitize=undefined"
+    else 
+      echo unexpected sanitizer: $SANITIZER; 
+      exit 1
+    fi
+    ninja -C build-libcxx install-cxx install-cxxabi install-unwind
 elif [ "$STDLIB" == "libstdcxx" ]; then
     CXXFLAGS="-std=c++23"
     LDFLAGS=""
@@ -42,16 +51,19 @@ else
     exit 1
 fi
 
-if [ ! "${ENABLE_SANITIZER}" = "none" ]; then
-    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=$(capitalize ${ENABLE_SANITIZER})"
-fi
-
-if [ "${ENABLE_SANITIZER}" = "undefined" ]; then
-    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_ENABLE_RTTI=ON"
-fi
-
-if [ "${ENABLE_SANITIZER}" = "thread" ]; then
+if [ "$ENABLE_SANITIZER" = "none" ]; then 
+    echo "Not using a sanitizer"
+elif [ "$ENABLE_SANITIZER" = "asan" ]; then 
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=Address"
+elif [ "$ENABLE_SANITIZER" = "tsan" ]; then 
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=Thread"
     export TSAN_OPTIONS="report_bugs=0"
+elif [ "$ENABLE_SANITIZER" = "ubsan" ]; then 
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_ENABLE_RTTI=ON"
+    ADDITIONAL_FLAGS="${ADDITIONAL_FLAGS} -DLLVM_USE_SANITIZER=Undefined"
+else 
+  echo unexpected sanitizer: $SANITIZER; 
+  exit 1
 fi
 
 if [ ! -z "${CXXFLAGS}" ]; then
@@ -61,6 +73,7 @@ fi
 if [ ! -z "${LDFLAGS}" ]; then
     export LDFLAGS
 fi
+
 
 cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
     			        -DLLVM_ENABLE_PROJECTS="mlir"   \
