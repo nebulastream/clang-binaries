@@ -26,13 +26,13 @@ jobs:
       - name: Compress artifacts
         id: compressdeps
         run: |
-          ZSTD_CLEVEL=19 ZSTD_NBTHREADS=0 tar --zstd -cf nes-llvm-20-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd clang  
+          ZSTD_CLEVEL=19 ZSTD_NBTHREADS=0 tar --zstd -cf nes-llvm-21-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd clang
       - name: Release
         uses: softprops/action-gh-release@v1
         id: createrelease
         with:
           files: |
-            nes-llvm-20-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd
+            nes-llvm-21-${{ matrix.arch }}-${{ matrix.sanitizer }}-${{ matrix.stdlib }}.tar.zstd
       - name: Clean build artifacts
         id: cleanbuildartifacts
         if: always()
