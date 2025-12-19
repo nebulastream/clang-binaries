@@ -21,12 +21,25 @@ capitalize() {
   if [ -z "$1" ]; then
     return 1
   fi
-  
+
   local first_char rest
   first_char=$(echo "${1:0:1}" | tr '[:lower:]' '[:upper:]')
   rest="${1:1}"
   echo "${first_char}${rest}"
 }
+
+# Apply the patch before building
+if [ -f "/build_dir/173075.patch" ]; then
+    echo "Applying patch 173075.patch..."
+    patch -p1 < /build_dir/173075.patch
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to apply patch."
+        exit 1
+    fi
+else
+    echo "Error: Patch file 173075.patch not found."
+    exit 1
+fi
 
 CXX_FLAGS=""
 LDFLAGS=""
