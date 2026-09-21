@@ -17,19 +17,6 @@ cd /build_dir/llvm-project
 rm -rf ./build
 mkdir build
 
-# Apply the patch before building
-if [ -f "../173075.patch" ]; then
-    echo "Applying patch 173075.patch..."
-    patch -p1 < ../173075.patch
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to apply patch."
-        exit 1
-    fi
-else
-    echo "Error: Patch file 173075.patch not found."
-    exit 1
-fi
-
 capitalize() {
   if [ -z "$1" ]; then
     return 1
