@@ -67,6 +67,7 @@ cmake -G Ninja -S llvm -B build -DCMAKE_BUILD_TYPE=Release \
     			        -DLLVM_ENABLE_PROJECTS="mlir"   \
 				-DLLVM_TARGETS_TO_BUILD=Native \
 				-DLLVM_BUILD_TOOLS=OFF \
+				-DLLVM_USE_INTEL_JITEVENTS=ON \
 				-DCMAKE_INSTALL_PREFIX="/build_dir/clang" \
 				${ADDITIONAL_FLAGS}
 
