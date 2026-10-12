@@ -22,7 +22,7 @@ jobs:
       - name: Build Clang
         id: installdeps
         run: |
-          docker run -v ccache:/ccache -e CCACHE_DIR=/ccache -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer }} -e STDLIB=${{ matrix.stdlib }} --rm nebulastream/nes-development-base:4c009ed401d533d55af3666fb9a4d7e10e6b153f928123739d44038b246796c6 ./build_dir/build_llvm.sh
+          docker run -v ccache:/ccache -e CCACHE_DIR=/ccache -v ${{ github.workspace }}:/build_dir -e ENABLE_SANITIZER=${{ matrix.sanitizer }} -e STDLIB=${{ matrix.stdlib }} --rm nebulastream/nes-development-base:13a5bd5da089a276a21e2ef6ab4ac07e82cdc0524a2d5d9bf41581a409d0d334-${{ matrix.arch }} ./build_dir/build_llvm.sh
       - name: Compress artifacts
         id: compressdeps
         run: |
